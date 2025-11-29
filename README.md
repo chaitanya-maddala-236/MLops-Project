@@ -1,44 +1,87 @@
-# MLOps Project
+# Wine Quality Prediction - MLOps Project
 
-An end-to-end Machine Learning Operations (MLOps) pipeline demonstrating best practices for building, training, evaluating, and deploying machine learning models.
+An end-to-end Machine Learning Operations (MLOps) pipeline for predicting wine quality using physicochemical properties. This project demonstrates industry best practices for building, training, evaluating, and deploying machine learning models with complete experiment tracking and a web interface for predictions.
 
 ## 📋 Table of Contents
 
 - [Overview](#overview)
 - [Features](#features)
 - [Project Architecture](#project-architecture)
+- [Dataset](#dataset)
 - [Installation](#installation)
 - [Usage](#usage)
 - [Project Structure](#project-structure)
 - [Pipeline Components](#pipeline-components)
 - [Configuration](#configuration)
-- [Model Tracking](#model-tracking)
+- [Model Details](#model-details)
+- [Web Application](#web-application)
+- [Experiment Tracking](#experiment-tracking)
 - [Contributing](#contributing)
 - [License](#license)
 
 ## 🎯 Overview
 
-This project implements a complete MLOps workflow that encompasses the entire machine learning lifecycle from data ingestion to model evaluation. The pipeline is designed to be modular, scalable, and reproducible, following industry best practices for machine learning operations.
+This project implements a complete MLOps workflow for predicting wine quality based on physicochemical tests. The system uses an ElasticNet regression model to predict wine quality scores (0-10) based on 11 input features including acidity, sugar content, pH levels, and alcohol percentage.
+
+**Key Highlights:**
+- End-to-end automated ML pipeline from data ingestion to model deployment
+- ElasticNet regression model with hyperparameter tuning (alpha=0.2, l1_ratio=0.1)
+- MLflow and DagHub integration for comprehensive experiment tracking
+- Flask web application for real-time predictions
+- Modular, production-ready code architecture
+- Complete data validation and transformation pipeline
 
 ## ✨ Features
 
-- **End-to-End Pipeline**: Complete ML workflow from data ingestion to model evaluation
-- **Data Validation**: Automated schema validation and data quality checks
-- **Feature Engineering**: Comprehensive data transformation and preprocessing
-- **Experiment Tracking**: Integration with MLflow and DagHub for experiment management
-- **Modular Architecture**: Clean, maintainable code structure with separate components
-- **Configuration Management**: Centralized configuration using YAML files
-- **Reproducibility**: Consistent results through structured pipelines
+- **Automated Data Pipeline**: Downloads and processes wine quality dataset from GitHub
+- **Data Validation**: Schema validation ensuring data integrity with 12 features
+- **Train-Test Split**: Automated 75-25 split for model training and evaluation
+- **ElasticNet Model**: L1/L2 regularized regression for robust predictions
+- **Experiment Tracking**: Full MLflow and DagHub integration with metrics logging (RMSE, MAE, R²)
+- **Model Registry**: Automated model versioning and registration in MLflow
+- **Flask Web App**: User-friendly interface for real-time wine quality predictions
+- **Configuration Management**: YAML-based configuration for easy hyperparameter tuning
+- **Logging System**: Comprehensive logging for debugging and monitoring
+- **Modular Architecture**: Separate components for each pipeline stage
+- **Type Safety**: Type annotations with runtime validation using `ensure` library
 
 ## 🏗️ Project Architecture
 
-The project follows a modular architecture with the following key stages:
+The project follows a modular architecture with five distinct pipeline stages:
 
 ```
 Data Ingestion → Data Validation → Data Transformation → Model Training → Model Evaluation
 ```
 
+**Pipeline Flow:**
+1. **Data Ingestion**: Downloads wine quality dataset (ZIP format) and extracts it
+2. **Data Validation**: Validates 12 columns against schema (11 features + 1 target)
+3. **Data Transformation**: Performs train-test split (75-25)
+4. **Model Training**: Trains ElasticNet model with configured hyperparameters
+5. **Model Evaluation**: Evaluates model performance and logs to MLflow/DagHub
+
 Each stage is independently configurable and can be executed separately or as part of the complete pipeline.
+
+## 📊 Dataset
+
+**Source**: Red Wine Quality Dataset  
+**URL**: https://github.com/krishnaik06/datasets/raw/refs/heads/main/winequality-data.zip  
+**Size**: 1,599 samples × 12 features
+
+**Input Features** (11):
+- `fixed acidity`: Tartaric acid concentration (g/dm³)
+- `volatile acidity`: Acetic acid concentration (g/dm³)
+- `citric acid`: Citric acid concentration (g/dm³)
+- `residual sugar`: Remaining sugar after fermentation (g/dm³)
+- `chlorides`: Salt concentration (g/dm³)
+- `free sulfur dioxide`: Free SO₂ concentration (mg/dm³)
+- `total sulfur dioxide`: Total SO₂ concentration (mg/dm³)
+- `density`: Wine density (g/cm³)
+- `pH`: Acidity level (0-14 scale)
+- `sulphates`: Potassium sulphate concentration (g/dm³)
+- `alcohol`: Alcohol percentage (% vol)
+
+**Target Variable**: `quality` (score between 0-10)
 
 ## 🚀 Installation
 
@@ -76,40 +119,124 @@ Each stage is independently configurable and can be executed separately or as pa
 
 ### Running the Complete Pipeline
 
-Execute the entire ML pipeline:
+Execute all pipeline stages sequentially:
 
 ```bash
 python main.py
 ```
 
-### Running Individual Stages
+This will run all five stages:
+1. Data Ingestion
+2. Data Validation
+3. Data Transformation
+4. Model Training
+5. Model Evaluation (with MLflow logging)
 
-You can also run individual pipeline stages:
+### Running the Web Application
+
+Start the Flask web server for predictions:
+
+```bash
+python app.py
+```
+
+The application will be available at `http://localhost:8080`
+
+**Available Endpoints:**
+- `GET /` - Home page with input form
+- `GET /train` - Trigger model training pipeline
+- `POST /predict` - Submit wine features for quality prediction
+
+### Running Individual Pipeline Stages
+
+Execute specific stages independently:
 
 ```python
-from src.pipeline.stage_01_data_ingestion import DataIngestionTrainingPipeline
-from src.pipeline.stage_02_data_validation import DataValidationTrainingPipeline
-from src.pipeline.stage_03_data_transformation import DataTransformationTrainingPipeline
-from src.pipeline.stage_04_model_trainer import ModelTrainerTrainingPipeline
-from src.pipeline.stage_05_model_evaluation import ModelEvaluationTrainingPipeline
+from src.datascience.pipeline.data_ingestion_pipeline import DataIngestionTrainingPipeline
+from src.datascience.pipeline.data_validation_pipeline import DataValidationTrainingPipeline
+from src.datascience.pipeline.data_transformation_pipeline import DataTransformationTrainingPipeline
+from src.datascience.pipeline.model_trainer_pipeline import ModelTrainerTrainingPipeline
+from src.datascience.pipeline.model_evaluation_pipeline import ModelEvaluationTrainingPipeline
 
-# Run specific stage
+# Example: Run only data ingestion
 pipeline = DataIngestionTrainingPipeline()
-pipeline.main()
+pipeline.initiate_data_ingestion()
+```
+
+### Making Predictions Programmatically
+
+```python
+from src.datascience.pipeline.prediction_pipeline import PredictionPipeline
+import numpy as np
+
+# Create prediction pipeline
+predictor = PredictionPipeline()
+
+# Sample wine features [fixed_acidity, volatile_acidity, citric_acid, ...]
+features = np.array([[7.4, 0.70, 0.00, 1.9, 0.076, 11.0, 34.0, 0.9978, 3.51, 0.56, 9.4]])
+
+# Get prediction
+quality_score = predictor.predict(features)
+print(f"Predicted Wine Quality: {quality_score}")
 ```
 
 ## 📁 Project Structure
 
 ```
 MLops-Project/
+├── .github/
+│   └── workflows/           # CI/CD workflows (placeholder)
 ├── config/
-│   ├── config.yaml          # Main configuration file
-│   ├── schema.yaml          # Data schema definitions
-│   └── params.yaml          # Model hyperparameters
+│   └── config.yaml          # Pipeline configuration (paths, URLs)
 ├── src/
-│   ├── components/          # Core pipeline components
-│   │   ├── data_ingestion.py
-│   │   ├── data_validation.py
+│   └── datascience/
+│       ├── __init__.py      # Logging configuration
+│       ├── components/      # Core pipeline components
+│       │   ├── data_ingestion.py
+│       │   ├── data_validation.py
+│       │   ├── data_transformation.py
+│       │   ├── model_trainer.py
+│       │   └── model_evaluation.py
+│       ├── config/
+│       │   └── configuration.py  # Configuration manager
+│       ├── constants/
+│       │   └── __init__.py  # File paths constants
+│       ├── entity/
+│       │   └── config_entity.py  # Data classes for configs
+│       ├── pipeline/        # Pipeline orchestration
+│       │   ├── data_ingestion_pipeline.py
+│       │   ├── data_validation_pipeline.py
+│       │   ├── data_transformation_pipeline.py
+│       │   ├── model_trainer_pipeline.py
+│       │   ├── model_evaluation_pipeline.py
+│       │   └── prediction_pipeline.py
+│       └── utils/
+│           └── common.py    # Utility functions (YAML, JSON, logging)
+├── research/                # Jupyter notebooks for experimentation
+│   ├── 1_data_ingestion.ipynb
+│   ├── 2_data_validation.ipynb
+│   ├── 3_data_transformation.ipynb
+│   ├── 4_model_trainer.ipynb
+│   └── 5_model_evaluation.ipynb
+├── templates/               # Flask HTML templates
+│   ├── index.html          # Input form
+│   └── results.html        # Prediction results
+├── artifacts/               # Generated artifacts (data, models, metrics)
+│   ├── data_ingestion/
+│   ├── data_validation/
+│   ├── data_transformation/
+│   ├── model_trainer/
+│   └── model_evaluation/
+├── logs/                    # Application logs
+├── app.py                   # Flask web application
+├── main.py                  # Main pipeline executor
+├── params.yaml              # Model hyperparameters
+├── schema.yaml              # Data schema definitions
+├── requirements.txt         # Python dependencies
+├── template.py              # Project structure generator
+├── Dockerfile               # Docker configuration (placeholder)
+└── README.md                # Project documentation
+```── data_validation.py
 │   │   ├── data_transformation.py
 │   │   ├── model_trainer.py
 │   │   └── model_evaluation.py
